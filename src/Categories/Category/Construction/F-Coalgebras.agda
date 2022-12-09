@@ -13,6 +13,9 @@ import Categories.Morphism.Reasoning as MR
 import Categories.Morphism as Mor using (_≅_; Iso)
 open import Categories.Category.Construction.F-Algebras
 open import Categories.Functor.Duality
+open import Categories.Category.Equivalence using (StrongEquivalence;WeakInverse)
+open import Categories.NaturalTransformation.NaturalIsomorphism using (NaturalIsomorphism;NIHelper;niHelper)
+open import Categories.NaturalTransformation using (NTHelper;ntHelper)
 
 private
   variable
@@ -51,25 +54,62 @@ F-Coalgebras {C = C} F = record
     open F-Coalgebra-Morphism
     module coF-Algebras = Category (Category.op (F-Algebras (Functor.op F)))
 
-F-Coalgebras⇒coF-Algebras : {C : Category o ℓ e} → (F : Endofunctor C) → Functor (F-Coalgebras F) (Category.op (F-Algebras (Functor.op F)))
-F-Coalgebras⇒coF-Algebras {C = C} F = record
-  { F₀           = F-Coalgebra⇒coF-Algebra
-  ; F₁           = F-Coalgebra-Morphism⇒coF-Algebra-Morphism
-  ; identity     = refl
-  ; homomorphism = refl
-  ; F-resp-≈     = λ {_ _ α₁ α₂} α₁≈α₂ →
-     begin
-      F-Algebra-Morphism.f (F-Coalgebra-Morphism⇒coF-Algebra-Morphism α₁) ≈⟨ refl ⟩
-      f α₁ ≈⟨ α₁≈α₂ ⟩
-      f α₂ ≈⟨ refl ⟩
-      F-Algebra-Morphism.f (F-Coalgebra-Morphism⇒coF-Algebra-Morphism α₂) ∎
-  }
-  where
-    open Category C
-    open MR C
-    open HomReasoning
-    open Equiv
-    open F-Coalgebra-Morphism
+-- ## F-Coalgebras⇔coF-Algebras
+
+module _ {C : Category o ℓ e} (F : Endofunctor C) where
+  open Functor F renaming (op to Fop)
+  open Category C
+  open MR C
+  open HomReasoning
+  open Equiv
+
+  F-Coalgebras⇒coF-Algebras : Functor (F-Coalgebras F) (Category.op (F-Algebras Fop))
+  F-Coalgebras⇒coF-Algebras = record
+    { F₀           = F-Coalgebra⇒coF-Algebra
+    ; F₁           = F-Coalgebra-Morphism⇒coF-Algebra-Morphism
+    ; identity     = refl
+    ; homomorphism = refl
+    ; F-resp-≈     = λ {_ _ α₁ α₂} α₁≈α₂ →
+       begin
+        F-Algebra-Morphism.f (F-Coalgebra-Morphism⇒coF-Algebra-Morphism α₁) ≈⟨ refl ⟩
+        F-Coalgebra-Morphism.f α₁ ≈⟨ α₁≈α₂ ⟩
+        F-Coalgebra-Morphism.f α₂ ≈⟨ refl ⟩
+        F-Algebra-Morphism.f (F-Coalgebra-Morphism⇒coF-Algebra-Morphism α₂) ∎
+    }
+
+  coF-Algebras⇒F-Coalgebras : Functor (Category.op (F-Algebras Fop)) (F-Coalgebras F)
+  coF-Algebras⇒F-Coalgebras = record
+    { F₀           = coF-Algebra⇒F-Coalgebra
+    ; F₁           = coF-Algebra-Morphism⇒F-Coalgebra-Morphism
+    ; identity     = refl
+    ; homomorphism = refl
+    ; F-resp-≈     = λ {_ _ α₁ α₂} α₁≈α₂ →
+       begin
+        F-Coalgebra-Morphism.f (coF-Algebra-Morphism⇒F-Coalgebra-Morphism α₁) ≈⟨ refl ⟩
+        F-Algebra-Morphism.f α₁ ≈⟨ α₁≈α₂ ⟩
+        F-Algebra-Morphism.f α₂ ≈⟨ refl ⟩
+        F-Coalgebra-Morphism.f (coF-Algebra-Morphism⇒F-Coalgebra-Morphism α₂) ∎
+    }
+
+  F-Coalgebras⇔coF-Algebras : StrongEquivalence (F-Coalgebras F) (Category.op (F-Algebras Fop))
+  F-Coalgebras⇔coF-Algebras = record
+    { F = F-Coalgebras⇒coF-Algebras
+    ; G = coF-Algebras⇒F-Coalgebras
+    ; weak-inverse = record
+      { F∘G≈id = niHelper record
+        { η = λ X → Category.id (Category.op (F-Algebras Fop))
+        ; η⁻¹ = λ X → Category.id (Category.op (F-Algebras Fop))
+        ; commute = λ g → id-comm-sym {f = F-Algebra-Morphism.f g }
+        ; iso = λ X → record { isoˡ = identity² ; isoʳ = identity² }
+        }
+      ; G∘F≈id = niHelper record
+        { η = λ X → Category.id (F-Coalgebras F)
+        ; η⁻¹ = λ X → Category.id (F-Coalgebras F)
+        ; commute = λ g → id-comm-sym {f = F-Coalgebra-Morphism.f g}
+        ; iso = λ X → record { isoˡ = identity² ; isoʳ = identity² }
+        }
+      }
+    }
 
 private
   coIsTerminal⇒Initial : ∀ {C : Category o ℓ e} {F : Endofunctor C}
