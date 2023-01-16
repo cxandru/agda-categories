@@ -47,7 +47,7 @@ module _ {C : Category o ℓ e} where
     coalg : F-Coalgebra F
     coalg = to-Coalgebra c₁
 
-  record μ-Bialgebra-Morphism {T F : Endofunctor C} {μ : DistributiveLaw T F} (X Y : μ-Bialgebra T F μ) : Set (o ⊔ ℓ ⊔ e) where
+  μ-Bialgebra-Morphism record {T F : Endofunctor C} {μ : DistributiveLaw T F} (X Y : μ-Bialgebra T F μ) : Set (o ⊔ ℓ ⊔ e) where
     open Category C using (_⇒_)
     private
       module X = μ-Bialgebra X

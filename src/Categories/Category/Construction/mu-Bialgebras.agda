@@ -13,11 +13,15 @@ open import Categories.Functor.Bialgebra
 open import Categories.Category.Construction.F-Algebras
 open import Categories.Category.Construction.F-Coalgebras
 open import Categories.Functor.DistributiveLaw using (DistributiveLaw)
-open import Categories.Functor.Construction.LiftAlgebras using (LiftAlgebras)
+open import Categories.Functor.Construction.LiftAlgebras using (LiftAlgebras; liftInitial)
+open import Categories.Functor.Construction.LiftCoalgebras using (LiftCoalgebras; liftTerminal2)
 
 open import Categories.Category.Equivalence using (StrongEquivalence;WeakInverse)
 open import Categories.NaturalTransformation.NaturalIsomorphism using (NaturalIsomorphism;NIHelper;niHelper)
-open import Categories.NaturalTransformation using (NTHelper;ntHelper)
+open import Categories.NaturalTransformation using (NaturalTransformation;NTHelper;ntHelper)
+
+open import Categories.Object.Initial
+open import Categories.Object.Terminal
 
 private
   variable
@@ -67,6 +71,8 @@ module _ {C : Category o ℓ e} (T F : Endofunctor C) (μ : DistributiveLaw T F)
       open Functor F
       open F-Coalgebra-Morphism
       open F-Coalgebra
+
+-- start Bialgs≅Coalgs(F̂)
 
   μ-Bialgebras⇒CoalgebrasLiftAlgebrasF : Functor μ-Bialgebras (F-Coalgebras (LiftAlgebras T F μ))
   μ-Bialgebras⇒CoalgebrasLiftAlgebrasF = record
@@ -145,3 +151,62 @@ module _ {C : Category o ℓ e} (T F : Endofunctor C) (μ : DistributiveLaw T F)
               c ≈⟨ ⟺ identityˡ ⟩
               id ∘ c ≈⟨ ∘-resp-≈ˡ (⟺ identity)⟩
               F₁ id ∘ c ∎
+
+-- end Bialgs≅Coalgs(F̂)
+
+  AlgebrasLiftCoalgebrasT⇒μ-Bialgebras : Functor (F-Algebras (LiftCoalgebras T F μ)) μ-Bialgebras
+  AlgebrasLiftCoalgebrasT⇒μ-Bialgebras = record
+      { F₀           = λ X → record
+      { A = F-Coalgebra.A (F-Algebra.A X)
+      ; a₁ = F-Coalgebra-Morphism.f (F-Algebra.α X)
+      ; c₁ = F-Coalgebra.α (F-Algebra.A X)
+      ; respects-μ = F-Coalgebra-Morphism.commutes (F-Algebra.α X)
+      }
+    ; F₁           = λ {X Y} β → record
+      { f = F-Coalgebra-Morphism.f (F-Algebra-Morphism.f β)
+      ; f-is-alg-morph = F-Algebra-Morphism.commutes β
+      ; f-is-coalg-morph = F-Coalgebra-Morphism.commutes (F-Algebra-Morphism.f β)
+      }
+    ; identity     = refl
+    ; homomorphism = refl
+    ; F-resp-≈     = λ x → x
+    }
+
+  AlgebrasT̂⇒CoalgebrasF̂ : Functor (F-Algebras (LiftCoalgebras T F μ)) (F-Coalgebras (LiftAlgebras T F μ))
+  AlgebrasT̂⇒CoalgebrasF̂ = record
+    { F₀           = λ X → record
+      { A = to-Algebra $ F-Coalgebra-Morphism.f $ F-Algebra.α X
+      ; α = record
+        { f = F-Coalgebra.α $ F-Algebra.A X
+        ; commutes = F-Coalgebra-Morphism.commutes (F-Algebra.α X) ○ sym-assoc
+        }
+      }
+    ; F₁           = λ {X Y} β → record
+      { f = record
+        { f = F-Coalgebra-Morphism.f (F-Algebra-Morphism.f β)
+        ; commutes = F-Algebra-Morphism.commutes β
+        }
+      ; commutes = F-Coalgebra-Morphism.commutes (F-Algebra-Morphism.f β)
+      }
+    ; identity     = refl
+    ; homomorphism = refl
+    ; F-resp-≈     = λ x → x
+    }
+    where
+      open Functor
+      open NaturalTransformation
+
+  module _ (μT : Initial (F-Algebras T)) (νF : Terminal (F-Coalgebras F)) where
+    open Functor
+    private
+      ⊥̂  = liftInitial T F μ μT
+      ⊤̂  = liftTerminal2 T F μ νF
+    open Initial ⊥̂
+    open Terminal ⊤̂
+    open IsInitial ⊥-is-initial
+
+    centralTheorem :
+       Category._≈_ (F-Coalgebras (LiftAlgebras T F μ))
+       (IsInitial.! ⊥-is-initial)
+       (IsTerminal.! ⊤-is-terminal)
+    centralTheorem = IsInitial.!-unique ⊥-is-initial (IsTerminal.! ⊤-is-terminal)
