@@ -14,7 +14,7 @@ open import Categories.Category.Construction.F-Algebras
 open import Categories.Category.Construction.F-Coalgebras
 open import Categories.Functor.DistributiveLaw using (DistributiveLaw)
 open import Categories.Functor.Construction.LiftAlgebras using (LiftAlgebras; liftInitial)
-open import Categories.Functor.Construction.LiftCoalgebras using (LiftCoalgebras; liftTerminal2)
+open import Categories.Functor.Construction.LiftCoalgebras using (LiftCoalgebras; liftTerminalCoalgebrasF̂)
 
 open import Categories.Category.Equivalence using (StrongEquivalence;WeakInverse)
 open import Categories.NaturalTransformation.NaturalIsomorphism using (NaturalIsomorphism;NIHelper;niHelper)
@@ -172,41 +172,14 @@ module _ {C : Category o ℓ e} (T F : Endofunctor C) (μ : DistributiveLaw T F)
     ; F-resp-≈     = λ x → x
     }
 
-  AlgebrasT̂⇒CoalgebrasF̂ : Functor (F-Algebras (LiftCoalgebras T F μ)) (F-Coalgebras (LiftAlgebras T F μ))
-  AlgebrasT̂⇒CoalgebrasF̂ = record
-    { F₀           = λ X → record
-      { A = to-Algebra $ F-Coalgebra-Morphism.f $ F-Algebra.α X
-      ; α = record
-        { f = F-Coalgebra.α $ F-Algebra.A X
-        ; commutes = F-Coalgebra-Morphism.commutes (F-Algebra.α X) ○ sym-assoc
-        }
-      }
-    ; F₁           = λ {X Y} β → record
-      { f = record
-        { f = F-Coalgebra-Morphism.f (F-Algebra-Morphism.f β)
-        ; commutes = F-Algebra-Morphism.commutes β
-        }
-      ; commutes = F-Coalgebra-Morphism.commutes (F-Algebra-Morphism.f β)
-      }
-    ; identity     = refl
-    ; homomorphism = refl
-    ; F-resp-≈     = λ x → x
-    }
-    where
-      open Functor
-      open NaturalTransformation
-
   module _ (μT : Initial (F-Algebras T)) (νF : Terminal (F-Coalgebras F)) where
     open Functor
+    open Initial (liftInitial T F μ μT)
+    open Terminal (liftTerminalCoalgebrasF̂ T F μ νF)
     private
-      ⊥̂  = liftInitial T F μ μT
-      ⊤̂  = liftTerminal2 T F μ νF
-    open Initial ⊥̂
-    open Terminal ⊤̂
-    open IsInitial ⊥-is-initial
+      module μT̂ = IsInitial ⊥-is-initial
+      module νF̂ = IsTerminal ⊤-is-terminal
 
     centralTheorem :
-       Category._≈_ (F-Coalgebras (LiftAlgebras T F μ))
-       (IsInitial.! ⊥-is-initial)
-       (IsTerminal.! ⊤-is-terminal)
-    centralTheorem = IsInitial.!-unique ⊥-is-initial (IsTerminal.! ⊤-is-terminal)
+      (F-Coalgebras (LiftAlgebras T F μ)) [ μT̂.! ≈ νF̂.! ]
+    centralTheorem = μT̂.!-unique νF̂.!
